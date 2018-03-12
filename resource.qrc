@@ -1,0 +1,20 @@
+<RCC>
+    <qresource prefix="/icon">
+        <file alias="add">image/film_reel_add_256px_1111944_easyicon.net.png</file>
+        <file alias="remove">image/film_reel_cancel_256px_1111946_easyicon.net.png</file>
+        <file alias="delete">image/film_reel_cross_256px_1111950_easyicon.net.png</file>
+        <file alias="edit">image/MPEG_Stream_Clip_512px_1107793_easyicon.net.png</file>
+        <file alias="VR">image/White_World_512px_1133877_easyicon.net.png</file>
+        <file alias="start">image/refresh_475px_1205839_easyicon.net.png</file>
+        <file alias="forward">image/fast_forward_466px_1201058_easyicon.net.png</file>
+        <file alias="pause">image/pause_1024px_1184018_easyicon.net.png</file>
+        <file alias="play">image/Play_256px_1194083_easyicon.net.png</file>
+        <file alias="backward">image/rewind_579px_1201220_easyicon.net.png</file>
+        <file alias="stop">image/stop_579px_1201374_easyicon.net.png</file>
+        <file alias="sound">image/Sound_801px_1183378_easyicon.net.png</file>
+        <file alias="itemedit">image/cinema_325px_1146900_easyicon.net.png</file>
+        <file alias="itemcorrect">image/correct_387px_1146906_easyicon.net.png</file>
+        <file alias="itemproject">image/earth_287px_1146918_easyicon.net.png</file>
+        <file alias="itemavi">image/avi_300px_1146867_easyicon.net.png</file>
+    </qresource>
+</RCC>

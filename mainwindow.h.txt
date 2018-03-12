@@ -1,0 +1,50 @@
+#include mainwindow.h
+#include ui_mainwindow.h
+
+MainWindowMainWindow(QWidget parent) 
+    QMainWindow(parent),
+    ui(new UiMainWindow)
+{
+    ui-setupUi(this);
+    movietable=ui-tableWidget;
+}
+
+MainWindow~MainWindow()
+{
+    delete ui;
+}
+void MainWindowinitUI()
+{
+
+}
+void MainWindowinitTable()
+{
+    movietable-setColumnCount(4);
+    movietable-horizontalHeader()-setDefaultSectionSize(150);
+    QStringList header;
+    header文件名时长格式剪辑全景转换进度;
+    movietable-setHorizontalHeaderLabels(header);
+    QFont font=movietable-horizontalHeader()-font();
+    font.setBold(true);
+    movietable-horizontalHeader()-setFont(font);
+    movietable-horizontalHeader()-setStretchLastSection(true);
+    movietable-verticalHeader()-setVisible(false);
+    movietable-setSelectionMode(QAbstractItemViewExtendedSelection);
+    movietable-setSelectionBehavior(QAbstractItemViewSelectRows);
+    movietable-setEditTriggers(QAbstractItemViewNoEditTriggers);
+    movietable-horizontalHeader()-resizeSection(0,150);
+    movietable-horizontalHeader()-setFixedHeight(25);
+    movietable-setStyleSheet(selection-background-colorlightblue;); 设置选中背景色
+    movietable-horizontalHeader()-setStyleSheet(QHeaderViewsection{backgroundgray;}); 设置表头背景色
+    movietable-horizontalScrollBar()-setStyleSheet(QScrollBar{backgroundtransparent; height10px;}
+    QScrollBarhandle{backgroundlightgray; border2px solid transparent; border-radius5px;}
+    QScrollBarhandlehover{backgroundgray;}
+    QScrollBarsub-line{backgroundtransparent;}
+    QScrollBaradd-line{backgroundtransparent;});
+    movietable-verticalScrollBar()-setStyleSheet(QScrollBar{backgroundtransparent; width 10px;}
+    QScrollBarhandle{backgroundlightgray; border2px solid transparent; border-radius5px;}
+    QScrollBarhandlehover{backgroundgray;}
+    QScrollBarsub-line{backgroundtransparent;}
+    QScrollBaradd-line{backgroundtransparent;});
+
+}
