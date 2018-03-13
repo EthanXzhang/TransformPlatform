@@ -26,14 +26,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
     mainwindow.cpp \
-    movieinfo.cpp
+    movieinfo.cpp \
+    projectiondialog.cpp
 
 HEADERS += \
         mainwindow.h \
-    movieinfo.h
+    movieinfo.h \
+    projectiondialog.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+    projectiondialog.ui
 
 RESOURCES += \
     resource.qrc
