@@ -2,6 +2,9 @@
 #define PROJECTIONDIALOG_H
 
 #include <QDialog>
+#include <QLineEdit>
+#include <QComboBox>
+#include <QCheckBox>
 
 namespace Ui {
 class ProjectionDialog;
@@ -17,6 +20,10 @@ public:
 
 private:
     Ui::ProjectionDialog *ui;
+    QComboBox* input
+
+private:
+    initUI();
 };
 
 #endif // PROJECTIONDIALOG_H
