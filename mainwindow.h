@@ -100,6 +100,7 @@ private:
     void removeMovieVector();
     void doTransformMission(MovieInfo *p);
 
+
 private slots:
     void addMovie();
     void removeMovie();
@@ -111,7 +112,9 @@ private slots:
     void openDir();
     void startTransform();
     void playMovie(const QModelIndex & index);
+    void getCurrentItemSet(const QModelIndex & index);
     void updateTransformProgressBar();
+    void setMoviePath(int index);
 };
 
 #endif // MAINWINDOW_H

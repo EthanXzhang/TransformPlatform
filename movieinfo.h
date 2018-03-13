@@ -78,7 +78,7 @@ public:
     QDateTime start,end,duration;
     bool projectflag=false,editflag=false,finishflag=false;
     TransformContext setting;
-    int row_num;
+    int row_num,path_index;
 };
 
 #endif // MOVIEINFO_H

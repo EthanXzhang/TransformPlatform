@@ -58,6 +58,8 @@ void MainWindow::initSlots()
     connect(ui->removeMovieButton,SIGNAL(clicked(bool)),this,SLOT(removeMovie()));
     connect(ui->deleteAllButton,SIGNAL(clicked(bool)),this,SLOT(deleteAll()));
     connect(movietable,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(playMovie(QModelIndex)));
+    connect(movietable,SIGNAL(clicked(QModelIndex)),this,SLOT(getCurrentItemSet(QModelIndex)));
+    connect(pathbox,SIGNAL(activated(int)),this,SLOT(setMoviePath(int)));
     connect(ui->stratTransformButton,SIGNAL(clicked(bool)),this,SLOT(startTransform()));
     connect(timer,SIGNAL(timeout()),this,SLOT(updateTransformProgressBar()));
 }
@@ -188,8 +190,16 @@ void MainWindow::formatSetting()
 }
 void MainWindow::setPath()
 {
-    pathbox->insertItem(0,QFileDialog::getExistingDirectory(NULL,"caption","."));
-    pathbox->setCurrentIndex(0);
+    QString path=QFileDialog::getExistingDirectory(NULL,"caption",".");
+    if(path.isEmpty())
+    {
+        return ;
+    }
+    else
+    {
+        pathbox->insertItem(0,path);
+        pathbox->setCurrentIndex(0);
+    }
 }
 void MainWindow::openDir()
 {
@@ -232,7 +242,10 @@ void MainWindow::startTransform()
     {
         doTransformMission(movielist.at(i));
     }
-    transbar->setFormat(QString::fromLocal8Bit("已完成所有任务"));
+    else
+    {
+        transbar->setFormat(QString::fromLocal8Bit("已完成所有任务"));
+    }
 }
 void MainWindow::playMovie(const QModelIndex & index)
 {
@@ -399,16 +412,7 @@ void MainWindow::connectPlayerFilter()
     getUnconnectedPin(pSource,PINDIR_OUTPUT,&pOut);
     getUnconnectedPin(pADec,PINDIR_INPUT,&pIn);
     hr=pGraph->Connect(pOut,pIn);
-//    getUnconnectedPin(pVDec,PINDIR_OUTPUT,&pOut);
-//    getUnconnectedPin(pTransform,PINDIR_INPUT,&pIn);
-//    hr=pGraph->Connect(pOut,pIn);
     hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pVDec,pTransform,pVRenderer);
-//    getUnconnectedPin(pTransform,PINDIR_OUTPUT,&pOut);
-//    getUnconnectedPin(pVRenderer,PINDIR_INPUT,&pIn);
-//    hr=pGraph->Connect(pOut,pIn);
-//    getUnconnectedPin(pADec,PINDIR_OUTPUT,&pOut);
-//    getUnconnectedPin(pARenderer,PINDIR_INPUT,&pIn);
-//    hr=pGraph->Connect(pOut,pIn);
     hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pADec,NULL,pARenderer);
 }
 void MainWindow::addPlayerFilter()
@@ -573,6 +577,7 @@ void MainWindow::addMovieVector(QFileInfo fileinfo,int row)
     pmi->name=fileinfo.fileName();
     pmi->output=pathbox->currentText()+"\\"+fileinfo.fileName();
     pmi->row_num=row;
+    pmi->path_index=pathbox->currentIndex();
     movielist.insert(movielist.end(),pmi);
 }
 void MainWindow::removeMovieVector()
@@ -627,4 +632,17 @@ void MainWindow::doTransformMission(MovieInfo *p)
         timer->stop();
         return ;
     }
+}
+void MainWindow::getCurrentItemSet(const QModelIndex & index)
+{
+    pathbox->setCurrentIndex(movielist.at(index.row())->path_index);
+}
+void MainWindow::setMoviePath(int index)
+{
+    if(movietable->isItemSelected(movietable->currentItem())==false)
+    {
+        return ;
+    }
+    movielist.at(movietable->currentRow())->path_index=index;
+    movielist.at(movietable->currentRow())->output=pathbox->currentText()+'\\'+movielist.at(movietable->currentRow())->name;
 }
