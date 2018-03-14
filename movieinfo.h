@@ -31,8 +31,8 @@ typedef struct TransformContext {
     int w, h;
     int out_map_planes= 0;
 
-    char *w_expr= "";               ///< width  expression string
-    char *h_expr= "";               ///< height expression string
+    char *w_expr;               ///< width  expression string
+    char *h_expr;               ///< height expression string
     char *size_str=NULL;
     int cube_edge_length=0;
     int max_cube_edge_length=960;

@@ -5,6 +5,7 @@
 #include <QLineEdit>
 #include <QComboBox>
 #include <QCheckBox>
+#include <movieinfo.h>
 
 namespace Ui {
 class ProjectionDialog;
@@ -17,13 +18,19 @@ class ProjectionDialog : public QDialog
 public:
     explicit ProjectionDialog(QWidget *parent = 0);
     ~ProjectionDialog();
+    MovieInfo* movieinfo;
 
 private:
     Ui::ProjectionDialog *ui;
-    QComboBox* input
+
+    QComboBox *inputformatbox,*outputformatbox,*algorithmbox;
+    QLineEdit *widthline,*heightline,*maxcubelenghtline,*cubelenghtline,*vsline,*hsline;
+    QCheckBox *enablelowpassbox,*enableMTbox;
 
 private:
-    initUI();
+    void initUI();
+    void initComboBox();
+    void getMovieInfo();
 };
 
 #endif // PROJECTIONDIALOG_H

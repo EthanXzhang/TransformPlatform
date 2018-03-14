@@ -27,6 +27,7 @@
 #include <atlstr.h>
 
 #include "movieinfo.h"
+#include "projectiondialog.h"
 namespace Ui {
 class MainWindow;
 }

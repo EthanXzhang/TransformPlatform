@@ -67,5 +67,5 @@ LIBS +=kernel32.lib \
     oleaut32.lib \
     uuid.lib \
     odbc32.lib \
-    odbccp32.lib\
-    strmiids.lib\
+    odbccp32.lib \
+    strmiids.lib \

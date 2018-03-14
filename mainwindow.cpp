@@ -62,6 +62,7 @@ void MainWindow::initSlots()
     connect(pathbox,SIGNAL(activated(int)),this,SLOT(setMoviePath(int)));
     connect(ui->stratTransformButton,SIGNAL(clicked(bool)),this,SLOT(startTransform()));
     connect(timer,SIGNAL(timeout()),this,SLOT(updateTransformProgressBar()));
+    connect(ui->editProjectionButton,SIGNAL(clicked(bool)),this,SLOT(editProjection()));
 }
 void MainWindow::initTable()
 {
@@ -182,7 +183,13 @@ void MainWindow::editMovie()
 }
 void MainWindow::editProjection()
 {
-
+    if(movietable->isItemSelected(movietable->currentItem())==false)
+    {
+        return ;
+    }
+    ProjectionDialog *pd=new ProjectionDialog(this);
+    pd->movieinfo=movielist.at(movietable->currentIndex().row());
+    pd->show();
 }
 void MainWindow::formatSetting()
 {
