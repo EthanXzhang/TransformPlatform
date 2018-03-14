@@ -1,13 +1,17 @@
 #include "projectiondialog.h"
 #include "ui_projectiondialog.h"
 
-ProjectionDialog::ProjectionDialog(QWidget *parent) :
+ProjectionDialog::ProjectionDialog(QWidget *parent,MovieInfo *p) :
     QDialog(parent),
     ui(new Ui::ProjectionDialog)
 {
     ui->setupUi(this);
+    movieinfo=p;
     initUI();
     initComboBox();
+    getMovieInfo();
+    setAttribute(Qt::WA_DeleteOnClose);
+    connect(ui->buttonBox,SIGNAL(accepted()),this,SLOT(setMovieInfo()));
 }
 
 ProjectionDialog::~ProjectionDialog()
@@ -36,6 +40,7 @@ void ProjectionDialog::initComboBox()
         inputformatbox->addItem(projectionformat[i]);
         outputformatbox->addItem(projectionformat[i]);
     }
+    inputformatbox->setCurrentIndex(2);
     QString algortithm[]={"CUBIC","NEAREST","LINEAR","LANCZOS4"};
     for(int i=0;i<4;i++)
     {
@@ -151,4 +156,83 @@ void ProjectionDialog::getMovieInfo()
         cubelenghtline->setText(QString::number(movieinfo->setting.cube_edge_length));
     }
     maxcubelenghtline->setText(QString::number(movieinfo->setting.max_cube_edge_length));
+}
+void ProjectionDialog::setMovieInfo()
+{
+    //设置分辨率
+    if(QString::compare(widthline->text(),"Auto")!=0)
+    {
+        movieinfo->setting.w=widthline->text().toInt();
+
+    }
+    if(QString::compare(heightline->text(),"Auto")!=0)
+    {
+        movieinfo->setting.h=heightline->text().toInt();
+    }
+    //设置输入投影格式
+    switch(inputformatbox->currentIndex())
+    {
+    case 0:
+        movieinfo->setting.input_layout=LAYOUT_CUBEMAP_32;
+        break;
+    case 1:
+        movieinfo->setting.input_layout=LAYOUT_CUBEMAP_23_OFFCENTER;
+        break;
+    case 2:
+        movieinfo->setting.input_layout=LAYOUT_EQUIRECT;
+        break;
+    case 3:
+        movieinfo->setting.input_layout=LAYOUT_BARREL;
+        break;
+    case 4:
+        movieinfo->setting.input_layout=LAYOUT_EAC_32;
+        break;
+    }
+    switch(outputformatbox->currentIndex())
+    {
+    case 0:
+        movieinfo->setting.output_layout=LAYOUT_CUBEMAP_32;
+        break;
+    case 1:
+        movieinfo->setting.output_layout=LAYOUT_CUBEMAP_23_OFFCENTER;
+        break;
+    case 2:
+        movieinfo->setting.output_layout=LAYOUT_EQUIRECT;
+        break;
+    case 3:
+        movieinfo->setting.output_layout=LAYOUT_BARREL;
+        break;
+    case 4:
+        movieinfo->setting.output_layout=LAYOUT_EAC_32;
+        break;
+    }
+    //设置插值算法
+    switch (algorithmbox->currentIndex())
+    {
+    case 0:
+        movieinfo->setting.interpolation_alg=CUBIC;
+        break;
+    case 1:
+        movieinfo->setting.interpolation_alg=NEAREST;
+        break;
+    case 2:
+        movieinfo->setting.interpolation_alg=LINEAR;
+        break;
+    case 3:
+        movieinfo->setting.interpolation_alg=LANCZOS4;
+        break;
+    default:
+        break;
+    }
+    //设置立方块尺寸
+    if(QString::compare(cubelenghtline->text(),"Auto")!=0)
+    {
+        movieinfo->setting.cube_edge_length=cubelenghtline->text().toInt();
+    }
+    movieinfo->setting.max_cube_edge_length=maxcubelenghtline->text().toInt();
+    //设置滤波器
+    movieinfo->setting.enable_low_pass_filter=enablelowpassbox->isChecked();
+    movieinfo->setting.enable_multi_threading=enableMTbox->isChecked();
+    movieinfo->setting.num_vertical_segments=vsline->text().toInt();
+    movieinfo->setting.num_horizontal_segments=hsline->text().toInt();
 }

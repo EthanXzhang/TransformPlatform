@@ -16,7 +16,7 @@ class ProjectionDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit ProjectionDialog(QWidget *parent = 0);
+    explicit ProjectionDialog(QWidget *parent = 0,MovieInfo *p=NULL);
     ~ProjectionDialog();
     MovieInfo* movieinfo;
 
@@ -31,6 +31,8 @@ private:
     void initUI();
     void initComboBox();
     void getMovieInfo();
+private slots:
+    void setMovieInfo();
 };
 
 #endif // PROJECTIONDIALOG_H

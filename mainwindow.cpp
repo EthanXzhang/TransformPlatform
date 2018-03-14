@@ -187,9 +187,22 @@ void MainWindow::editProjection()
     {
         return ;
     }
-    ProjectionDialog *pd=new ProjectionDialog(this);
-    pd->movieinfo=movielist.at(movietable->currentIndex().row());
-    pd->show();
+    ProjectionDialog *pd=new ProjectionDialog(this,movielist.at(movietable->currentIndex().row()));
+    int res=pd->exec();
+    if(res==QDialog::Accepted)
+    {
+        int row=movietable->currentRow();
+        //²åÈëÍ¼±ê
+        QPixmap *pixmap= new QPixmap();
+        QPixmap scaledPixmap;
+        QLabel *label=new QLabel();
+        QSize picSize(25,25);
+        pixmap->load(":/icon/itemcorrect");
+        scaledPixmap=pixmap->scaled(picSize,Qt::KeepAspectRatio);
+        label->setPixmap(scaledPixmap);
+        label->setAlignment(Qt::AlignCenter);
+        movietable->setCellWidget(row,4,label);
+    }
 }
 void MainWindow::formatSetting()
 {

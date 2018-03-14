@@ -28,7 +28,7 @@ typedef enum Layout {
   LAYOUT_N
 } Layout;
 typedef struct TransformContext {
-    int w, h;
+    int w=0, h=0;
     int out_map_planes= 0;
 
     char *w_expr;               ///< width  expression string

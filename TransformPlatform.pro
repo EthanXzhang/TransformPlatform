@@ -56,6 +56,8 @@ LIBS += lib\avcodec.lib \
         lib\postproc.lib    \
         lib\swresample.lib  \
         lib\swscale.lib \
+        G:\Coding\dx9sdk\Lib \
+
 LIBS +=kernel32.lib \
     user32.lib \
     gdi32.lib \
@@ -69,3 +71,4 @@ LIBS +=kernel32.lib \
     odbc32.lib \
     odbccp32.lib \
     strmiids.lib \
+    strmbase.lib \
