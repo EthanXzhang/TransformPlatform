@@ -32,7 +32,8 @@ SOURCES += \
 HEADERS += \
         mainwindow.h \
     movieinfo.h \
-    projectiondialog.h
+    projectiondialog.h \
+    transforminterface.h
 
 FORMS += \
         mainwindow.ui \

@@ -63,6 +63,7 @@ void MainWindow::initSlots()
     connect(ui->stratTransformButton,SIGNAL(clicked(bool)),this,SLOT(startTransform()));
     connect(timer,SIGNAL(timeout()),this,SLOT(updateTransformProgressBar()));
     connect(ui->editProjectionButton,SIGNAL(clicked(bool)),this,SLOT(editProjection()));
+    connect(ui->settingButton,SIGNAL(clicked(bool)),this,SLOT(formatSetting()));
 }
 void MainWindow::initTable()
 {
@@ -183,15 +184,16 @@ void MainWindow::editMovie()
 }
 void MainWindow::editProjection()
 {
+    int row=movietable->currentRow();
     if(movietable->isItemSelected(movietable->currentItem())==false)
     {
         return ;
     }
-    ProjectionDialog *pd=new ProjectionDialog(this,movielist.at(movietable->currentIndex().row()));
+    ProjectionDialog *pd=new ProjectionDialog(this,movielist.at(row));
     int res=pd->exec();
     if(res==QDialog::Accepted)
     {
-        int row=movietable->currentRow();
+        movielist.at(row)->projectflag=true;
         //插入图标
         QPixmap *pixmap= new QPixmap();
         QPixmap scaledPixmap;
@@ -206,7 +208,12 @@ void MainWindow::editProjection()
 }
 void MainWindow::formatSetting()
 {
-
+    QProcess * po = new QProcess(this);
+    po->setWorkingDirectory("D:\\Program Files (x86)\\SIAT\\SIAT3DPlayer\\Plug-in");
+    QString program = "C:\\Windows\\SysWOW64\\rundll32.exe";
+    QStringList argu;
+    argu.append("x264vfw.dll,Configure");
+    po->start(program,argu);
 }
 void MainWindow::setPath()
 {
@@ -219,6 +226,10 @@ void MainWindow::setPath()
     {
         pathbox->insertItem(0,path);
         pathbox->setCurrentIndex(0);
+        for(int i=0;i<movielist.size();i++)
+        {
+            movielist.at(i)->path_index++;
+        }
     }
 }
 void MainWindow::openDir()
@@ -247,8 +258,11 @@ void MainWindow::updateTransformProgressBar()
         destroyDShow();
         destroyTransformFilter();
         currentmission->finishflag=true;
+        movietable->item(currentmission->row_num,5)->setText(QString::fromLocal8Bit("已完成"));
         timer->stop();
+        transflag=false;
         startTransform();
+
     }
 }
 void MainWindow::startTransform()
@@ -422,6 +436,8 @@ void MainWindow::destroyTransformFilter()
     pVDec->Release();
     pADec->Release();
     pTransform->Release();
+    pMuxer->Release();
+    pWriter->Release();
 }
 void MainWindow::connectPlayerFilter()
 {
@@ -637,6 +653,15 @@ void MainWindow::doTransformMission(MovieInfo *p)
     hr=pSource->QueryInterface(IID_IFileSourceFilter,(void **)&pFileSource);
     pFileSource->Load(input,NULL);
     hr=pWriter->QueryInterface(IID_IFileSinkFilter,(void **)&pFileWriter);
+    TransformFilterInterface *pTransformInterface;
+    hr=pTransform->QueryInterface(IID_TransformFilterInterface,(void **)&pTransformInterface);
+    if(currentmission->projectflag)
+    {
+        pTransformInterface->DoSetting(currentmission->setting.w,currentmission->setting.h,(int)currentmission->setting.input_layout,(int)currentmission->setting.output_layout,
+                                       0,currentmission->setting.cube_edge_length,currentmission->setting.max_cube_edge_length,currentmission->setting.interpolation_alg,
+                                       currentmission->setting.enable_low_pass_filter,currentmission->setting.enable_multi_threading,currentmission->setting.num_vertical_segments,
+                                       currentmission->setting.num_horizontal_segments);
+    }
     pFileWriter->SetFileName(output,NULL);
     if(FAILED(hr))
     {

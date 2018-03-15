@@ -25,9 +25,11 @@
 #include <dshow.h>
 #include <vector>
 #include <atlstr.h>
+#include <QProcess>
 
 #include "movieinfo.h"
 #include "projectiondialog.h"
+#include "transforminterface.h"
 namespace Ui {
 class MainWindow;
 }
