@@ -300,12 +300,22 @@ void MainWindow::playMovie(const QModelIndex & index)
     LPCOLESTR str=reinterpret_cast<const wchar_t *>(p->path.utf16());
     hr=pSource->QueryInterface(IID_IFileSourceFilter,(void **)&pFileSource);
     pFileSource->Load(str,NULL);
+        TransformFilterInterface *pTransformInterface;
+        hr=pTransform->QueryInterface(IID_TransformFilterInterface,(void **)&pTransformInterface);
+        if(p->projectflag)
+        {
+            pTransformInterface->DoSetting(p->setting.w,p->setting.h,(int)p->setting.input_layout,(int)p->setting.output_layout,
+                                           0,p->setting.cube_edge_length,p->setting.max_cube_edge_length,p->setting.interpolation_alg,
+                                           p->setting.enable_low_pass_filter,p->setting.enable_multi_threading,p->setting.num_vertical_segments,
+                                           p->setting.num_horizontal_segments);
+        }
+        pTransformInterface->Release();
     if(FAILED(hr))
     {
         return ;
     }
     addPlayerFilter();
-    //getPages(pVDec,pProp);
+    //getPages(pTransform,pProp);
     connectPlayerFilter();
     bindwindows();
     hr = pControl->Run();
