@@ -20,6 +20,7 @@
 #include <QTableWidget>
 #include <QScrollBar>
 #include <QTimer>
+#include <QMessageBox>
 
 #include <atlbase.h>
 #include <dshow.h>
@@ -30,6 +31,7 @@
 #include "movieinfo.h"
 #include "projectiondialog.h"
 #include "transforminterface.h"
+#include "encoderdialog.h"
 namespace Ui {
 class MainWindow;
 }
@@ -58,7 +60,7 @@ private:
 
     HWND g_hWnd;
     IVideoWindow *m_pVW;
-    CLSID source,transform,vdec,adec,vrenderer,arenderer,vcodec,muxer,writer;
+    CLSID source,transform,vdec,adec,vrenderer,arenderer,vcodec,avimuxer,mp4muxer,writer;
     IGraphBuilder *pGraph=NULL;
     IMediaControl *pControl=NULL;
     IMediaEvent   *pEvent = NULL;
@@ -112,9 +114,10 @@ private slots:
     void editProjection();
     void formatSetting();
     void setPath();
+    void setMux();
     void openDir();
     void startTransform();
-    void playMovie(const QModelIndex & index);
+    void playMovie(QTableWidgetItem *item);
     void getCurrentItemSet(const QModelIndex & index);
     void updateTransformProgressBar();
     void setMoviePath(int index);

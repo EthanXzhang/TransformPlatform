@@ -16,5 +16,7 @@
         <file alias="itemcorrect">image/correct_387px_1146906_easyicon.net.png</file>
         <file alias="itemproject">image/earth_287px_1146918_easyicon.net.png</file>
         <file alias="itemavi">image/avi_300px_1146867_easyicon.net.png</file>
+        <file alias="setting">image/SETTING_512px_1115306_easyicon.net.png</file>
+        <file alias="preview">image/preview_256px_1168082_easyicon.net.png</file>
     </qresource>
 </RCC>

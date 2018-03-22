@@ -27,17 +27,23 @@ SOURCES += \
         main.cpp \
     mainwindow.cpp \
     movieinfo.cpp \
-    projectiondialog.cpp
+    projectiondialog.cpp \
+    encoderdialog.cpp \
+    editdialog.cpp
 
 HEADERS += \
         mainwindow.h \
     movieinfo.h \
     projectiondialog.h \
-    transforminterface.h
+    transforminterface.h \
+    encoderdialog.h \
+    editdialog.h
 
 FORMS += \
         mainwindow.ui \
-    projectiondialog.ui
+    projectiondialog.ui \
+    encoderdialog.ui \
+    editdialog.ui
 
 RESOURCES += \
     resource.qrc

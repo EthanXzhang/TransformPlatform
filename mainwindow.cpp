@@ -57,9 +57,10 @@ void MainWindow::initSlots()
     connect(ui->addMovieButton,SIGNAL(clicked(bool)),this,SLOT(addMovie()));
     connect(ui->removeMovieButton,SIGNAL(clicked(bool)),this,SLOT(removeMovie()));
     connect(ui->deleteAllButton,SIGNAL(clicked(bool)),this,SLOT(deleteAll()));
-    connect(movietable,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(playMovie(QModelIndex)));
+    connect(movietable,SIGNAL(itemClicked(QTableWidgetItem*)),this,SLOT(playMovie(QTableWidgetItem*)));
     connect(movietable,SIGNAL(clicked(QModelIndex)),this,SLOT(getCurrentItemSet(QModelIndex)));
     connect(pathbox,SIGNAL(activated(int)),this,SLOT(setMoviePath(int)));
+    connect(formatbox,SIGNAL(activated(int)),this,SLOT(setMux()));
     connect(ui->stratTransformButton,SIGNAL(clicked(bool)),this,SLOT(startTransform()));
     connect(timer,SIGNAL(timeout()),this,SLOT(updateTransformProgressBar()));
     connect(ui->editProjectionButton,SIGNAL(clicked(bool)),this,SLOT(editProjection()));
@@ -71,7 +72,7 @@ void MainWindow::initTable()
     movietable->horizontalHeader()->setDefaultSectionSize(150);
     QStringList header;
     QString name=QString::fromLocal8Bit("文件名");
-    QString time=QString::fromLocal8Bit("时长");
+    QString time=QString::fromLocal8Bit("点击预览");
     QString format=QString::fromLocal8Bit("格式");
     QString edit=QString::fromLocal8Bit("剪辑");
     QString projection=QString::fromLocal8Bit("全景");
@@ -110,10 +111,8 @@ void MainWindow::initCombobox()
 {
     QString pavi=QString::fromLocal8Bit("AVI 音视频交错格式(*.avi)");
     QString pmp4=QString::fromLocal8Bit("MEPG-4 视频格式(*.mp4)");
-    QString pmkv=QString::fromLocal8Bit("MKV 视频格式(*.mp4)");
     formatbox->insertItem(0,pavi);
     formatbox->insertItem(1,pmp4);
-    formatbox->insertItem(2,pmkv);
     pathbox->setInsertPolicy(QComboBox::InsertBeforeCurrent);
     for(int i=0;i<8&&pathlist[i]!=NULL;i++)
     {
@@ -135,6 +134,13 @@ void MainWindow::addMovie()
         item->setIcon(icon);
         item->setText(name);
         movietable->setItem(row,0,item);
+        //插入AVI格式图标
+        QIcon icon_preview;
+        icon_preview.addFile(":/icon/preview");
+        item=new QTableWidgetItem();
+        item->setIcon(icon_preview);
+        item->setText(QString::fromLocal8Bit("预览"));
+        movietable->setItem(row,1,item);
         //插入AVI格式图标
         QIcon icon_avi;
         icon_avi.addFile(":/icon/itemavi");
@@ -187,6 +193,7 @@ void MainWindow::editProjection()
     int row=movietable->currentRow();
     if(movietable->isItemSelected(movietable->currentItem())==false)
     {
+        QMessageBox::about(NULL, QString::fromLocal8Bit("空选"),QString::fromLocal8Bit("请先选择列表中一项"));
         return ;
     }
     ProjectionDialog *pd=new ProjectionDialog(this,movielist.at(row));
@@ -208,12 +215,14 @@ void MainWindow::editProjection()
 }
 void MainWindow::formatSetting()
 {
-    QProcess * po = new QProcess(this);
-    po->setWorkingDirectory("D:\\Program Files (x86)\\SIAT\\SIAT3DPlayer\\Plug-in");
-    QString program = "C:\\Windows\\SysWOW64\\rundll32.exe";
-    QStringList argu;
-    argu.append("x264vfw.dll,Configure");
-    po->start(program,argu);
+    int row=movietable->currentRow();
+    if(movietable->isItemSelected(movietable->currentItem())==false)
+    {
+        QMessageBox::about(NULL, QString::fromLocal8Bit("空选"),QString::fromLocal8Bit("请先选择列表中一项"));
+        return ;
+    }
+    EncoderDialog *pe=new EncoderDialog(this,movielist.at(row));
+    int res=pe->exec();
 }
 void MainWindow::setPath()
 {
@@ -281,8 +290,12 @@ void MainWindow::startTransform()
         transbar->setFormat(QString::fromLocal8Bit("已完成所有任务"));
     }
 }
-void MainWindow::playMovie(const QModelIndex & index)
+void MainWindow::playMovie(QTableWidgetItem *item)
 {
+    if(item->column()!=1)
+    {
+        return ;
+    }
     if(!dshowflag)
     {
         initDirectShow();
@@ -296,7 +309,8 @@ void MainWindow::playMovie(const QModelIndex & index)
         initPlayerFilter();
     }
     dshowflag=true;
-    MovieInfo *p=movielist.at(index.row());
+    int row=item->row();
+    MovieInfo *p=movielist.at(row);
     LPCOLESTR str=reinterpret_cast<const wchar_t *>(p->path.utf16());
     hr=pSource->QueryInterface(IID_IFileSourceFilter,(void **)&pFileSource);
     pFileSource->Load(str,NULL);
@@ -419,7 +433,8 @@ HRESULT MainWindow::getCLSID()
     hr = CLSIDFromString(OLESTR("{9E5A9E31-1C34-4873-863D-D5441C645398}"), &transform);
     hr = CLSIDFromString(OLESTR("{152F4328-67D0-4B28-A98B-DEEE7D27B63E}"), &vrenderer);
     hr = CLSIDFromString(OLESTR("{79376820-07D0-11CF-A24D-0020AFD79767}"), &arenderer);
-    hr = CLSIDFromString(OLESTR("{E2510970-F137-11CE-8B67-00AA00A3F1A6}"), &muxer);
+    hr = CLSIDFromString(OLESTR("{E2510970-F137-11CE-8B67-00AA00A3F1A6}"), &avimuxer);
+    hr = CLSIDFromString(OLESTR("{5FD85181-E542-4E52-8D9D-5D613C30131B}"), &mp4muxer);
     hr = CLSIDFromString(OLESTR("{8596E5F0-0DA5-11D0-BD21-00A0C911CE86}"), &writer);
     return hr;
 }
@@ -535,18 +550,39 @@ void MainWindow::CreateCompressorFilter(IBaseFilter **pBaseFilter)
             var.vt = VT_BSTR;
             hr = pBag->Read(L"FriendlyName", &var, NULL); //还有其他属性,像描述信息等等...
             CString str = var.bstrVal;
-            if (str.Find(L"x264vfw - H.264/MPEG-4 AVC codec",0)!=-1)//"x264vfw - H.264/MPEG-4 AVC codec"
-            {
-                //获取设备名称
-                char camera_name[1024];
-                WideCharToMultiByte(CP_ACP, 0, var.bstrVal, -1, camera_name, sizeof(camera_name), "", NULL);
-                SysFreeString(var.bstrVal);
-                hr = pM->BindToObject(0, 0, IID_IBaseFilter, (void**)pBaseFilter);//就是这句获得Filter
-                if (FAILED(hr))
+            switch (currentmission->encoder) {
+            case x264:
+                if (str.Find(L"x264vfw - H.264/MPEG-4 AVC codec",0)!=-1)//"x264vfw - H.264/MPEG-4 AVC codec"
                 {
-                    printf("error");
+                    //获取设备名称
+                    char camera_name[1024];
+                    WideCharToMultiByte(CP_ACP, 0, var.bstrVal, -1, camera_name, sizeof(camera_name), "", NULL);
+                    SysFreeString(var.bstrVal);
+                    hr = pM->BindToObject(0, 0, IID_IBaseFilter, (void**)pBaseFilter);//就是这句获得Filter
+                    if (FAILED(hr))
+                    {
+                        printf("error");
+                    }
                 }
+                break;
+            case x265:
+                if (str.Find(L"x265vfw - H.265/MPEG-H codec",0)!=-1)//"x265vfw - H.265/MPEG-H codec"
+                {
+                    //获取设备名称
+                    char camera_name[1024];
+                    WideCharToMultiByte(CP_ACP, 0, var.bstrVal, -1, camera_name, sizeof(camera_name), "", NULL);
+                    SysFreeString(var.bstrVal);
+                    hr = pM->BindToObject(0, 0, IID_IBaseFilter, (void**)pBaseFilter);//就是这句获得Filter
+                    if (FAILED(hr))
+                    {
+                        printf("error");
+                    }
+                }
+                break;
+            default:
+                break;
             }
+
             pBag->Release();
         }
         pM->Release();
@@ -560,7 +596,17 @@ void MainWindow::initTransformFilter()
     hr=CoCreateInstance(vdec, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pVDec);
     hr=CoCreateInstance(adec, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pADec);
     hr=CoCreateInstance(transform, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pTransform);
-    hr=CoCreateInstance(muxer, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pMuxer);
+    switch (currentmission->muxer)
+    {
+    case avi:
+        hr=CoCreateInstance(avimuxer, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pMuxer);
+        break;
+    case mp4:
+        hr=CoCreateInstance(mp4muxer, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pMuxer);
+        break;
+    default:
+        break;
+    }
     hr=CoCreateInstance(writer, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pWriter);
     hr = pMuxer->QueryInterface(IID_IMediaSeeking, (void**)&pSeeking);
     if(pSeeking!=NULL)
@@ -620,10 +666,11 @@ void MainWindow::addMovieVector(QFileInfo fileinfo,int row)
 {
     MovieInfo *pmi=new MovieInfo();
     pmi->path=fileinfo.absoluteFilePath();
-    pmi->name=fileinfo.fileName();
-    pmi->output=pathbox->currentText()+"\\"+fileinfo.fileName();
+    pmi->name=fileinfo.baseName();
+    pmi->output=pathbox->currentText()+"\\"+fileinfo.baseName();
     pmi->row_num=row;
     pmi->path_index=pathbox->currentIndex();
+    pmi->muxer=(Muxer)formatbox->currentIndex();
     movielist.insert(movielist.end(),pmi);
 }
 void MainWindow::removeMovieVector()
@@ -659,19 +706,30 @@ void MainWindow::doTransformMission(MovieInfo *p)
     }
     transflag=true;
     LPCOLESTR input=reinterpret_cast<const wchar_t *>(p->path.utf16());
-    LPCOLESTR output=reinterpret_cast<const wchar_t *>(p->output.utf16());
     hr=pSource->QueryInterface(IID_IFileSourceFilter,(void **)&pFileSource);
     pFileSource->Load(input,NULL);
     hr=pWriter->QueryInterface(IID_IFileSinkFilter,(void **)&pFileWriter);
     TransformFilterInterface *pTransformInterface;
     hr=pTransform->QueryInterface(IID_TransformFilterInterface,(void **)&pTransformInterface);
-    if(currentmission->projectflag)
+    if(p->projectflag)
     {
-        pTransformInterface->DoSetting(currentmission->setting.w,currentmission->setting.h,(int)currentmission->setting.input_layout,(int)currentmission->setting.output_layout,
-                                       0,currentmission->setting.cube_edge_length,currentmission->setting.max_cube_edge_length,currentmission->setting.interpolation_alg,
-                                       currentmission->setting.enable_low_pass_filter,currentmission->setting.enable_multi_threading,currentmission->setting.num_vertical_segments,
-                                       currentmission->setting.num_horizontal_segments);
+        pTransformInterface->DoSetting(p->setting.w,p->setting.h,(int)p->setting.input_layout,(int)p->setting.output_layout,
+                                       0,p->setting.cube_edge_length,p->setting.max_cube_edge_length,p->setting.interpolation_alg,
+                                       p->setting.enable_low_pass_filter,p->setting.enable_multi_threading,p->setting.num_vertical_segments,
+                                       p->setting.num_horizontal_segments);
     }
+    switch (p->muxer)
+    {
+    case avi:
+        p->outputfile=p->output+'.'+"avi";
+        break;
+    case mp4:
+        p->outputfile=p->output+'.'+"mp4";
+        break;
+    default:
+        break;
+    }
+    LPCOLESTR output=reinterpret_cast<const wchar_t *>(p->outputfile.utf16());
     pFileWriter->SetFileName(output,NULL);
     if(FAILED(hr))
     {
@@ -691,6 +749,7 @@ void MainWindow::doTransformMission(MovieInfo *p)
 void MainWindow::getCurrentItemSet(const QModelIndex & index)
 {
     pathbox->setCurrentIndex(movielist.at(index.row())->path_index);
+    formatbox->setCurrentIndex((int)movielist.at(index.row())->muxer);
 }
 void MainWindow::setMoviePath(int index)
 {
@@ -700,4 +759,12 @@ void MainWindow::setMoviePath(int index)
     }
     movielist.at(movietable->currentRow())->path_index=index;
     movielist.at(movietable->currentRow())->output=pathbox->currentText()+'\\'+movielist.at(movietable->currentRow())->name;
+}
+void MainWindow::setMux()
+{
+    if(movietable->isItemSelected(movietable->currentItem())==false)
+    {
+        return ;
+    }
+    movielist.at(movietable->currentRow())->muxer=(Muxer)formatbox->currentIndex();
 }
