@@ -6,7 +6,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    initDatabase();
     initSys();
     initUI();
     initSlots();
@@ -14,7 +13,6 @@ MainWindow::MainWindow(QWidget *parent) :
 }
 MainWindow::~MainWindow()
 {
-    database.close();
     delete ui;
 }
 void MainWindow::initSys()
@@ -24,21 +22,6 @@ void MainWindow::initSys()
     pathlist[2]=QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     pathlist[3]=QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
     timer=new QTimer(this);
-}
-void MainWindow::initDatabase()
-{
-
-    if (QSqlDatabase::contains("qt_sql_default_connection"))
-    {
-        database = QSqlDatabase::database("qt_sql_default_connection");
-    }
-    else
-    {
-        database = QSqlDatabase::addDatabase("QSQLITE");
-        database.setDatabaseName("MyDataBase.db");
-        database.setUserName("formattransform");
-        database.setPassword("siatvideo");
-    }
 }
 void MainWindow::initUI()
 {

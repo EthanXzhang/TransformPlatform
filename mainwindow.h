@@ -2,9 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QSqlDatabase>
-#include <QSqlError>
-#include <QSqlQuery>
 #include <QDir>
 #include <QStandardPaths>
 #include <QDesktopServices>
@@ -55,7 +52,6 @@ private:
     QTimer *timer;
     QProgressBar *transbar;
 
-    QSqlDatabase database;
     QString pathlist[8];
 
     HWND g_hWnd;
@@ -79,7 +75,6 @@ private:
     void initUI();
     void initTable();
     void initCombobox();
-    void initDatabase();
     void initSys();
     void initSlots();
 
@@ -104,7 +99,6 @@ private:
     void addMovieVector(QFileInfo fileinfo,int row);
     void removeMovieVector();
     void doTransformMission(MovieInfo *p);
-
 
 private slots:
     void addMovie();

@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui sql
+QT       += core gui
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -47,6 +47,8 @@ FORMS += \
 
 RESOURCES += \
     resource.qrc
+RC_FILE+=   \
+    icon.rc
 INCLUDEPATH += include\libavcodec \
             include\libavdevice \
             include\libavfilter \
