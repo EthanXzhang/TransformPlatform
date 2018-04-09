@@ -150,18 +150,18 @@ QToolButton:pressed{border:4px groove gray;border-radius:10px;padding:2px 4px;ba
           </spacer>
          </item>
          <item>
-          <widget class="QToolButton" name="editMovieButton">
+          <widget class="QToolButton" name="playerButton">
            <property name="styleSheet">
             <string notr="true">QToolButton{border:2px groove gray;border-radius:10px;padding:2px 4px;background-color: rgb(230, 230, 230);font: 75 11pt &quot;Agency FB&quot;;}
 QToolButton:pressed{border:4px groove gray;border-radius:10px;padding:2px 4px;background-color: rgb(230, 230, 230);font: 75 11pt &quot;Agency FB&quot;;}
 </string>
            </property>
            <property name="text">
-            <string>     编 辑     </string>
+            <string>弹出播放器</string>
            </property>
            <property name="icon">
             <iconset resource="resource.qrc">
-             <normaloff>:/icon/edit</normaloff>:/icon/edit</iconset>
+             <normaloff>:/icon/player</normaloff>:/icon/player</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -247,8 +247,8 @@ QToolButton:pressed{border:4px groove gray;border-radius:10px;padding:2px 4px;ba
            </property>
            <property name="maximumSize">
             <size>
-             <width>420</width>
-             <height>300</height>
+             <width>1920</width>
+             <height>1080</height>
             </size>
            </property>
            <property name="styleSheet">

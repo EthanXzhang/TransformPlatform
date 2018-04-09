@@ -53,6 +53,8 @@ void ProjectionDialog::getMovieInfo()
     {
         return ;
     }
+    ui->nameLabel->setText(movieinfo->name);
+    ui->nameEdit->setText(movieinfo->output);
     //获取输入投影格式
     switch (movieinfo->setting.input_layout) {
     case LAYOUT_CUBEMAP_32:
@@ -159,6 +161,7 @@ void ProjectionDialog::getMovieInfo()
 }
 void ProjectionDialog::setMovieInfo()
 {
+    movieinfo->output=ui->nameEdit->text();
     //设置分辨率
     if(QString::compare(widthline->text(),"Auto")!=0)
     {

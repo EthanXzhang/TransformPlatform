@@ -82,13 +82,14 @@ class MovieInfo
 public:
     MovieInfo();
 public:
-    QString name,path,output,outputfile;
+    QString name,path,output,outputpath,outputfile;
     QDateTime start,end,duration;
     bool projectflag=false,editflag=false,finishflag=false;
     TransformContext setting;
     int row_num,path_index;
     Encoder encoder=x264;
     Muxer muxer=avi;
+    bool projectionpreview=false;
 };
 
 #endif // MOVIEINFO_H

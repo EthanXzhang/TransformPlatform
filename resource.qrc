@@ -18,5 +18,7 @@
         <file alias="itemavi">image/avi_300px_1146867_easyicon.net.png</file>
         <file alias="setting">image/SETTING_512px_1115306_easyicon.net.png</file>
         <file alias="preview">image/preview_256px_1168082_easyicon.net.png</file>
+        <file alias="icon">icon.ico</file>
+        <file alias="player">image/video_player_243px_1202347_easyicon.net.png</file>
     </qresource>
 </RCC>

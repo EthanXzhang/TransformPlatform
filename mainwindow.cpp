@@ -6,6 +6,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    this->setWindowTitle("TransformPlatform V1.0");
+    this->setWindowIcon(QIcon(":/icon/icon"));
     initSys();
     initUI();
     initSlots();
@@ -21,7 +23,7 @@ void MainWindow::initSys()
     pathlist[1]=QStandardPaths::writableLocation(QStandardPaths::HomeLocation);
     pathlist[2]=QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
     pathlist[3]=QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    timer=new QTimer(this);
+    transformtimer=new QTimer(this);
 }
 void MainWindow::initUI()
 {
@@ -40,14 +42,15 @@ void MainWindow::initSlots()
     connect(ui->addMovieButton,SIGNAL(clicked(bool)),this,SLOT(addMovie()));
     connect(ui->removeMovieButton,SIGNAL(clicked(bool)),this,SLOT(removeMovie()));
     connect(ui->deleteAllButton,SIGNAL(clicked(bool)),this,SLOT(deleteAll()));
-    connect(movietable,SIGNAL(itemClicked(QTableWidgetItem*)),this,SLOT(playMovie(QTableWidgetItem*)));
     connect(movietable,SIGNAL(clicked(QModelIndex)),this,SLOT(getCurrentItemSet(QModelIndex)));
+    connect(movietable,SIGNAL(cellClicked(int,int)),this,SLOT(settingTableChanged(int, int)));
     connect(pathbox,SIGNAL(activated(int)),this,SLOT(setMoviePath(int)));
     connect(formatbox,SIGNAL(activated(int)),this,SLOT(setMux()));
     connect(ui->stratTransformButton,SIGNAL(clicked(bool)),this,SLOT(startTransform()));
-    connect(timer,SIGNAL(timeout()),this,SLOT(updateTransformProgressBar()));
+    connect(transformtimer,SIGNAL(timeout()),this,SLOT(updateTransformProgressBar()));
     connect(ui->editProjectionButton,SIGNAL(clicked(bool)),this,SLOT(editProjection()));
     connect(ui->settingButton,SIGNAL(clicked(bool)),this,SLOT(formatSetting()));
+    connect(ui->playerButton,SIGNAL(clicked(bool)),this,SLOT(sendoutPlayerWindow()));
 }
 void MainWindow::initTable()
 {
@@ -57,8 +60,8 @@ void MainWindow::initTable()
     QString name=QString::fromLocal8Bit("文件名");
     QString time=QString::fromLocal8Bit("点击预览");
     QString format=QString::fromLocal8Bit("格式");
-    QString edit=QString::fromLocal8Bit("剪辑");
-    QString projection=QString::fromLocal8Bit("全景");
+    QString edit=QString::fromLocal8Bit("预览转换");
+    QString projection=QString::fromLocal8Bit("格式");
     QString transform=QString::fromLocal8Bit("转换进度");
     header<<name<<time<<format<<edit<<projection<<transform;
     movietable->setHorizontalHeaderLabels(header);
@@ -71,11 +74,11 @@ void MainWindow::initTable()
     movietable->setSelectionBehavior(QAbstractItemView::SelectRows);
     movietable->setEditTriggers(QAbstractItemView::NoEditTriggers);
     movietable->horizontalHeader()->resizeSection(0,150);
-    movietable->horizontalHeader()->resizeSection(1,80);
+    movietable->horizontalHeader()->resizeSection(1,60);
     movietable->horizontalHeader()->resizeSection(2,60);
-    movietable->horizontalHeader()->resizeSection(3,30);
-    movietable->horizontalHeader()->resizeSection(4,30);
-    movietable->horizontalHeader()->resizeSection(5,50);
+    movietable->horizontalHeader()->resizeSection(3,60);
+    movietable->horizontalHeader()->resizeSection(4,40);
+    movietable->horizontalHeader()->resizeSection(5,60);
     movietable->horizontalHeader()->setFixedHeight(25);
     movietable->setStyleSheet("selection-background-color:lightblue;"); //设置选中背景色
     movietable->horizontalHeader()->setStyleSheet("QHeaderView::section{background:skyblue;}"); //设置表头背景色
@@ -94,8 +97,10 @@ void MainWindow::initCombobox()
 {
     QString pavi=QString::fromLocal8Bit("AVI 音视频交错格式(*.avi)");
     QString pmp4=QString::fromLocal8Bit("MEPG-4 视频格式(*.mp4)");
+    QString yuv=QString::fromLocal8Bit("YUV 原始帧输出（*.yuv）");
     formatbox->insertItem(0,pavi);
     formatbox->insertItem(1,pmp4);
+    formatbox->insertItem(2,yuv);
     pathbox->setInsertPolicy(QComboBox::InsertBeforeCurrent);
     for(int i=0;i<8&&pathlist[i]!=NULL;i++)
     {
@@ -122,7 +127,7 @@ void MainWindow::addMovie()
         icon_preview.addFile(":/icon/preview");
         item=new QTableWidgetItem();
         item->setIcon(icon_preview);
-        item->setText(QString::fromLocal8Bit("预览"));
+        item->setText(QString::fromLocal8Bit("播放"));
         movietable->setItem(row,1,item);
         //插入AVI格式图标
         QIcon icon_avi;
@@ -136,16 +141,15 @@ void MainWindow::addMovie()
         item->setTextAlignment(Qt::AlignCenter);
         movietable->setItem(row,5,item);
         //插入Eidt图标
+        QTableWidgetItem *check=new QTableWidgetItem;
+        check->setCheckState (Qt::Unchecked);
+        check->setText(QString::fromLocal8Bit("投影"));
+        movietable->setItem(row,3,check);
+        //插入Project图标
         QPixmap *pixmap= new QPixmap();
         QPixmap scaledPixmap;
         QLabel *label=new QLabel();
         QSize picSize(25,25);
-        pixmap->load(":/icon/itemedit");
-        scaledPixmap=pixmap->scaled(picSize,Qt::KeepAspectRatio);
-        label->setPixmap(scaledPixmap);
-        label->setAlignment(Qt::AlignHCenter);
-        movietable->setCellWidget(row,3,label);
-        //插入Project图标
         label=new QLabel();
         pixmap->load(":/icon/itemproject");
         scaledPixmap=pixmap->scaled(picSize,Qt::KeepAspectRatio);
@@ -171,13 +175,20 @@ void MainWindow::editMovie()
 {
 
 }
-void MainWindow::editProjection()
+void MainWindow::editProjection(int row,int col)
 {
-    int row=movietable->currentRow();
-    if(movietable->isItemSelected(movietable->currentItem())==false)
+    if(col!=4)
     {
-        QMessageBox::about(NULL, QString::fromLocal8Bit("空选"),QString::fromLocal8Bit("请先选择列表中一项"));
-        return ;
+        row=movietable->currentRow();
+//        if(movietable->is(movietable->currentItem())==false)
+//        {
+
+//        }
+        if(row<0)
+        {
+            QMessageBox::about(NULL, QString::fromLocal8Bit("空选"),QString::fromLocal8Bit("请先选择列表中一项"));
+            return ;
+        }
     }
     ProjectionDialog *pd=new ProjectionDialog(this,movielist.at(row));
     int res=pd->exec();
@@ -251,7 +262,7 @@ void MainWindow::updateTransformProgressBar()
         destroyTransformFilter();
         currentmission->finishflag=true;
         movietable->item(currentmission->row_num,5)->setText(QString::fromLocal8Bit("已完成"));
-        timer->stop();
+        transformtimer->stop();
         transflag=false;
         startTransform();
 
@@ -273,53 +284,62 @@ void MainWindow::startTransform()
         transbar->setFormat(QString::fromLocal8Bit("已完成所有任务"));
     }
 }
-void MainWindow::playMovie(QTableWidgetItem *item)
+void MainWindow::playMovie(int row)
 {
-    if(item->column()!=1)
-    {
-        return ;
-    }
-    if(!dshowflag)
-    {
-        initDirectShow();
-        initPlayerFilter();
-    }
-    else
-    {
-        destroyDShow();
-        destroyPlayerFilter();
-        initDirectShow();
-        initPlayerFilter();
-    }
-    dshowflag=true;
-    int row=item->row();
+//    if(item->column()!=1)
+//    {
+//        return ;
+//    }
+//    if(!dshowflag)
+//    {
+//        initDirectShow();
+//        initPlayerFilter();
+//    }
+//    else
+//    {
+//        destroyDShow();
+//        destroyPlayerFilter();
+//        initDirectShow();
+//        initPlayerFilter();
+//    }
+//    dshowflag=true;
+//    int row=item->row();
+//    MovieInfo *p=movielist.at(row);
+//    LPCOLESTR str=reinterpret_cast<const wchar_t *>(p->path.utf16());
+//    hr=pSource->QueryInterface(IID_IFileSourceFilter,(void **)&pFileSource);
+//    pFileSource->Load(str,NULL);
+//        TransformFilterInterface *pTransformInterface;
+//        hr=pTransform->QueryInterface(IID_TransformFilterInterface,(void **)&pTransformInterface);
+//        if(p->projectflag)
+//        {
+//            pTransformInterface->DoSetting(p->setting.w,p->setting.h,(int)p->setting.input_layout,(int)p->setting.output_layout,
+//                                           0,p->setting.cube_edge_length,p->setting.max_cube_edge_length,p->setting.interpolation_alg,
+//                                           p->setting.enable_low_pass_filter,p->setting.enable_multi_threading,p->setting.num_vertical_segments,
+//                                           p->setting.num_horizontal_segments);
+//        }
+//        pTransformInterface->Release();
+//    if(FAILED(hr))
+//    {
+//        return ;
+//    }
+//    addPlayerFilter();
+//    //getPages(pTransform,pProp);
+//    connectPlayerFilter();
+//    bindwindows();
+//    hr = pControl->Run();
+//    if(FAILED(hr))
+//    {
+//        return ;
+//    }
     MovieInfo *p=movielist.at(row);
-    LPCOLESTR str=reinterpret_cast<const wchar_t *>(p->path.utf16());
-    hr=pSource->QueryInterface(IID_IFileSourceFilter,(void **)&pFileSource);
-    pFileSource->Load(str,NULL);
-        TransformFilterInterface *pTransformInterface;
-        hr=pTransform->QueryInterface(IID_TransformFilterInterface,(void **)&pTransformInterface);
-        if(p->projectflag)
-        {
-            pTransformInterface->DoSetting(p->setting.w,p->setting.h,(int)p->setting.input_layout,(int)p->setting.output_layout,
-                                           0,p->setting.cube_edge_length,p->setting.max_cube_edge_length,p->setting.interpolation_alg,
-                                           p->setting.enable_low_pass_filter,p->setting.enable_multi_threading,p->setting.num_vertical_segments,
-                                           p->setting.num_horizontal_segments);
-        }
-        pTransformInterface->Release();
-    if(FAILED(hr))
+    if(player!=NULL)
     {
-        return ;
+        delete(player);
     }
-    addPlayerFilter();
-    //getPages(pTransform,pProp);
-    connectPlayerFilter();
-    bindwindows();
-    hr = pControl->Run();
-    if(FAILED(hr))
-    {
-        return ;
-    }
+    player=new Player(p);
+    player->dshowLayout=ui->dshowLayout;
+    player->setPlay();
+    player->runPlay();
 }
 int MainWindow::initDirectShow()
 {
@@ -335,16 +355,6 @@ int MainWindow::initDirectShow()
     hr = pGraph->QueryInterface(IID_IVideoWindow, (void**)&m_pVW);
     long evCode = 0;
     pEvent->WaitForCompletion(INFINITE, &evCode);
-    return hr;
-}
-int MainWindow::initPlayerFilter()
-{
-    hr=CoCreateInstance(source, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pSource);
-    hr=CoCreateInstance(vdec, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pVDec);
-    hr=CoCreateInstance(adec, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pADec);
-    hr=CoCreateInstance(transform, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pTransform);
-    hr=CoCreateInstance(vrenderer, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pVRenderer);
-    hr=CoCreateInstance(arenderer, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pARenderer);
     return hr;
 }
 HRESULT MainWindow::initCaptureGraphBuilder(IGraphBuilder **ppGraph, ICaptureGraphBuilder2 **ppBuild)
@@ -427,17 +437,6 @@ void MainWindow::destroyDShow()
     pControl->Release();
     pEvent->Release();
 }
-void MainWindow::destroyPlayerFilter()
-{
-    pSource->Release();
-    pVDec->Release();
-    pADec->Release();
-    pVRenderer->Release();
-    pARenderer->Release();
-    pTransform->Release();
-    ui->dshowLayout->removeWidget(dshowwidget);
-    delete(dshowwidget);
-}
 void MainWindow::destroyTransformFilter()
 {
     pSource->Release();
@@ -446,27 +445,6 @@ void MainWindow::destroyTransformFilter()
     pTransform->Release();
     pMuxer->Release();
     pWriter->Release();
-}
-void MainWindow::connectPlayerFilter()
-{
-    IPin *pOut,*pIn;
-    getUnconnectedPin(pSource,PINDIR_OUTPUT,&pOut);
-    getUnconnectedPin(pVDec,PINDIR_INPUT,&pIn);
-    hr=pGraph->Connect(pOut,pIn);
-    getUnconnectedPin(pSource,PINDIR_OUTPUT,&pOut);
-    getUnconnectedPin(pADec,PINDIR_INPUT,&pIn);
-    hr=pGraph->Connect(pOut,pIn);
-    hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pVDec,pTransform,pVRenderer);
-    hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pADec,NULL,pARenderer);
-}
-void MainWindow::addPlayerFilter()
-{
-    pGraph->AddFilter(pSource,L"Source");
-    pGraph->AddFilter(pVDec,L"Video Decodec");
-    pGraph->AddFilter(pADec,L"Audio Decodec");
-    pGraph->AddFilter(pTransform,L"Transform");
-    pGraph->AddFilter(pVRenderer,L"Video Renderer");
-    pGraph->AddFilter(pARenderer,L"Audio Renderer");
 }
 void MainWindow::addTransformFilter()
 {
@@ -478,37 +456,6 @@ void MainWindow::addTransformFilter()
     CreateCompressorFilter(&pVCod);
     pGraph->AddFilter(pVCod,L"x264 encoder");
     pGraph->AddFilter(pWriter,L"File Writer");
-}
-HRESULT MainWindow::bindwindows()
-{
-    dshowwidget=new QWidget;
-    hr = m_pVW->put_WindowStyle(WS_CHILD);
-    hr = m_pVW->put_Visible(OATRUE);
-    hr = m_pVW->put_Owner((OAHWND)dshowwidget->winId());
-    RECT grc;
-    GetClientRect((HWND)dshowwidget->winId(),&grc);
-    m_pVW->SetWindowPosition(0,0,420,300);
-    ui->dshowLayout->addWidget(dshowwidget);
-    return hr;
-}
-void MainWindow::getPages(IBaseFilter *pFilter,ISpecifyPropertyPages *pProp)
-{
-    HWND hWnd=CreateWindowW(L"Setting",L"Page",WS_VISIBLE,CW_USEDEFAULT, CW_USEDEFAULT, GetSystemMetrics(SM_CXSCREEN),GetSystemMetrics(SM_CYSCREEN), NULL, NULL, NULL, NULL);
-    HRESULT hr=pFilter->QueryInterface(IID_ISpecifyPropertyPages,(void**)&pProp);
-    if(SUCCEEDED(hr))
-    {
-        FILTER_INFO Filterinfo;
-        hr=pFilter->QueryFilterInfo(&Filterinfo);
-        IUnknown *pFilterUnk;
-        pFilter->QueryInterface(IID_IUnknown,(void **)&pFilterUnk);
-        CAUUID caGUID;
-        pProp->GetPages(&caGUID);
-        pProp->Release();
-        OleCreatePropertyFrame(hWnd,0,0,Filterinfo.achName,1,&pFilterUnk,caGUID.cElems,caGUID.pElems,0,0,NULL);
-        pFilterUnk->Release();
-        //Filterinfo.pGraph->Release();
-        CoTaskMemFree(caGUID.pElems);
-    }
 }
 void MainWindow::CreateCompressorFilter(IBaseFilter **pBaseFilter)
 {
@@ -616,9 +563,10 @@ void MainWindow::connectTransformFilter()
     getUnconnectedPin(pMuxer,PINDIR_INPUT,&pIn);
     hr=pGraph->Connect(pOut,pIn);
     //hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pVDec,pTransform,pMuxer);
-    getUnconnectedPin(pADec,PINDIR_OUTPUT,&pOut);
-    getUnconnectedPin(pMuxer,PINDIR_INPUT,&pIn);
-    hr=pGraph->Connect(pOut,pIn);
+//    getUnconnectedPin(pADec,PINDIR_OUTPUT,&pOut);
+//    getUnconnectedPin(pMuxer,PINDIR_INPUT,&pIn);
+//    hr=pGraph->Connect(pOut,pIn);
+    hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pADec,NULL,pMuxer);
     getUnconnectedPin(pMuxer,PINDIR_OUTPUT,&pOut);
     getUnconnectedPin(pWriter,PINDIR_INPUT,&pIn);
     hr=pGraph->Connect(pOut,pIn);
@@ -650,10 +598,12 @@ void MainWindow::addMovieVector(QFileInfo fileinfo,int row)
     MovieInfo *pmi=new MovieInfo();
     pmi->path=fileinfo.absoluteFilePath();
     pmi->name=fileinfo.baseName();
-    pmi->output=pathbox->currentText()+"\\"+fileinfo.baseName();
+    pmi->output=fileinfo.baseName();
+    pmi->outputpath=pathbox->currentText()+"\\";
     pmi->row_num=row;
     pmi->path_index=pathbox->currentIndex();
     pmi->muxer=(Muxer)formatbox->currentIndex();
+    pmi->projectionpreview=false;
     movielist.insert(movielist.end(),pmi);
 }
 void MainWindow::removeMovieVector()
@@ -704,14 +654,15 @@ void MainWindow::doTransformMission(MovieInfo *p)
     switch (p->muxer)
     {
     case avi:
-        p->outputfile=p->output+'.'+"avi";
+        p->outputfile=p->outputpath+p->output+'.'+"avi";
         break;
     case mp4:
-        p->outputfile=p->output+'.'+"mp4";
+        p->outputfile=p->outputpath+p->output+'.'+"mp4";
         break;
     default:
         break;
     }
+
     LPCOLESTR output=reinterpret_cast<const wchar_t *>(p->outputfile.utf16());
     pFileWriter->SetFileName(output,NULL);
     if(FAILED(hr))
@@ -722,10 +673,10 @@ void MainWindow::doTransformMission(MovieInfo *p)
     connectTransformFilter();
     initTransformProgressBar();
     hr = pControl->Run();
-    timer->start(300);
+    transformtimer->start(300);
     if(FAILED(hr))
     {
-        timer->stop();
+        transformtimer->stop();
         return ;
     }
 }
@@ -741,7 +692,7 @@ void MainWindow::setMoviePath(int index)
         return ;
     }
     movielist.at(movietable->currentRow())->path_index=index;
-    movielist.at(movietable->currentRow())->output=pathbox->currentText()+'\\'+movielist.at(movietable->currentRow())->name;
+    movielist.at(movietable->currentRow())->outputpath=pathbox->currentText()+'\\';
 }
 void MainWindow::setMux()
 {
@@ -750,4 +701,57 @@ void MainWindow::setMux()
         return ;
     }
     movielist.at(movietable->currentRow())->muxer=(Muxer)formatbox->currentIndex();
+}
+void MainWindow::settingTableChanged(int row, int col)
+{
+    switch(col)
+    {
+    case 1:
+        playMovie(row);
+        break;
+    case 3:
+        if(movietable->item(row,3)->checkState()==Qt::Checked)
+        {
+            movielist.at(row)->projectionpreview=true;
+        }else if(movietable->item(row,3)->checkState()==Qt::Unchecked)
+        {
+            movielist.at(row)->projectionpreview=false;
+        }
+        break;
+    case 4:
+        editProjection(row,col);
+        break;
+    default:
+        break;
+    }
+
+}
+void MainWindow::sendoutPlayerWindow()
+{
+    if(player==NULL)
+    {
+        return ;
+    }
+
+    if(playerwindow==NULL)
+    {
+        playerwindow=new PlayerWindow(NULL,this);
+        playerwindow->setAttribute(Qt::WA_DeleteOnClose);
+        player->removeWindow();
+        player->dshowLayout=playerwindow->main;
+        player->updateWindow();
+        playerwindow->show();
+    }else
+    {
+        if(playerwindow->isVisible())
+        {
+            playerwindow->close();
+            return ;
+        }
+        player->removeWindow();
+        player->dshowLayout=ui->dshowLayout;
+        player->updateWindow();
+        playerwindow=NULL;
+    }
+
 }

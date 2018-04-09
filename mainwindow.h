@@ -29,6 +29,8 @@
 #include "projectiondialog.h"
 #include "transforminterface.h"
 #include "encoderdialog.h"
+#include "player.h"
+#include "playerwindow.h"
 namespace Ui {
 class MainWindow;
 }
@@ -49,9 +51,8 @@ private:
     MovieInfo *currentmission;
     QComboBox *formatbox,*pathbox;
     QWidget *dshowwidget;
-    QTimer *timer;
+    QTimer *transformtimer;
     QProgressBar *transbar;
-
     QString pathlist[8];
 
     HWND g_hWnd;
@@ -62,15 +63,16 @@ private:
     IMediaEvent   *pEvent = NULL;
     IMediaSeeking *pSeeking=NULL;
     ICaptureGraphBuilder2* pGraph2=NULL;
-
     IFileSourceFilter *pFileSource;
     IFileSinkFilter *pFileWriter;
     IBaseFilter *pSource,*pTransform,*pVDec,*pADec,*pVRenderer,*pARenderer,*pVCod,*pMuxer,*pWriter;
     ISpecifyPropertyPages *pProp;
     LONGLONG duration=NULL;
-
     bool dshowflag=false,transflag=false;
     HRESULT hr;
+
+    Player *player=NULL;
+    PlayerWindow *playerwindow=NULL;
 private:
     void initUI();
     void initTable();
@@ -79,19 +81,14 @@ private:
     void initSlots();
 
     int initDirectShow();
-    int initPlayerFilter();
     HRESULT initCaptureGraphBuilder(IGraphBuilder **ppGraph, ICaptureGraphBuilder2 **ppBuild);
     HRESULT getUnconnectedPin(IBaseFilter *pFilter,PIN_DIRECTION PinDir,IPin **ppPin);
     HRESULT getCLSID();
     void destroyDShow();
     void destroyTransformFilter();
-    void destroyPlayerFilter();
     void connectPlayerFilter();
     void connectTransformFilter();
-    void addPlayerFilter();
     void addTransformFilter();
-    HRESULT bindwindows();
-    void getPages(IBaseFilter *pFilter,ISpecifyPropertyPages *pProp);
     void CreateCompressorFilter(IBaseFilter **pBaseFilter);
     void initTransformFilter();
     void initTransformProgressBar();
@@ -105,16 +102,19 @@ private slots:
     void removeMovie();
     void deleteAll();
     void editMovie();
-    void editProjection();
+    void editProjection(int row=0,int col=0);
     void formatSetting();
     void setPath();
     void setMux();
     void openDir();
     void startTransform();
-    void playMovie(QTableWidgetItem *item);
+    void playMovie(int row);
     void getCurrentItemSet(const QModelIndex & index);
     void updateTransformProgressBar();
     void setMoviePath(int index);
+    void settingTableChanged(int row, int col);
+public slots:
+    void sendoutPlayerWindow();
 };
 
 #endif // MAINWINDOW_H
