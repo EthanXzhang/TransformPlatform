@@ -6,7 +6,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    this->setWindowTitle("TransformPlatform V1.0");
+    this->setWindowTitle("TransformPlatform V1.1");
     this->setWindowIcon(QIcon(":/icon/icon"));
     initSys();
     initUI();

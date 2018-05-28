@@ -8,7 +8,7 @@ PlayerWindow::PlayerWindow(QWidget *parent,QMainWindow *mainwindow) :
     ui->setupUi(this);
     main=ui->mainLayout;
     mw=mainwindow;
-    this->setWindowTitle("TransformPlatform V1.0");
+    this->setWindowTitle("TransformPlayer V1.1");
     this->setWindowIcon(QIcon(":/icon/icon"));
 }
 
