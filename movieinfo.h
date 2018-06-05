@@ -88,8 +88,10 @@ public:
     TransformContext setting;
     int row_num,path_index;
     Encoder encoder=x264;
+    QString audioencoder="Microsoft ADPCM";
     Muxer muxer=avi;
     bool projectionpreview=false;
+    bool disableaudio=false;
 };
 
 #endif // MOVIEINFO_H

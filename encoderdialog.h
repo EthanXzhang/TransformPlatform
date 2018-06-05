@@ -5,6 +5,11 @@
 #include <QComboBox>
 #include <QToolButton>
 #include <QProcess>
+#include <QCheckBox>
+#include <QMessageBox>
+#include <atlbase.h>
+#include <dshow.h>
+#include <atlstr.h>
 #include "movieinfo.h"
 namespace Ui {
 class EncoderDialog;
@@ -22,13 +27,18 @@ private:
     Ui::EncoderDialog *ui;
     MovieInfo *movieinfo;
 private:
-    QComboBox *encoder;
-    QToolButton *setting;
+    QComboBox *videoencoder,*audioencoder;
+    QToolButton *videosetting,*help,*audiosetting;
+    QCheckBox *audio;
     void initUI();
     void initSetting();
+    void CreateAudioCompressorFilter();
 private slots:
     void getSetting();
     void setMovieInfo();
+    void setAudio(int state);
+    void getHelpInfo();
+    void acceptSetting();
 };
 
 #endif // ENCODERDIALOG_H

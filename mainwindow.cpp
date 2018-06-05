@@ -46,7 +46,7 @@ void MainWindow::initSlots()
     connect(movietable,SIGNAL(cellClicked(int,int)),this,SLOT(settingTableChanged(int, int)));
     connect(pathbox,SIGNAL(activated(int)),this,SLOT(setMoviePath(int)));
     connect(formatbox,SIGNAL(activated(int)),this,SLOT(setMux()));
-    connect(ui->stratTransformButton,SIGNAL(clicked(bool)),this,SLOT(startTransform()));
+    connect(ui->stratTransformButton,SIGNAL(clicked(bool)),this,SLOT(startMission()));
     connect(transformtimer,SIGNAL(timeout()),this,SLOT(updateTransformProgressBar()));
     connect(ui->editProjectionButton,SIGNAL(clicked(bool)),this,SLOT(editProjection()));
     connect(ui->settingButton,SIGNAL(clicked(bool)),this,SLOT(formatSetting()));
@@ -170,6 +170,7 @@ void MainWindow::deleteAll()
 {
     movietable->setRowCount(0);
     movietable->clearContents();
+    deleteAllMovieVector();
 }
 void MainWindow::editMovie()
 {
@@ -180,10 +181,6 @@ void MainWindow::editProjection(int row,int col)
     if(col!=4)
     {
         row=movietable->currentRow();
-//        if(movietable->is(movietable->currentItem())==false)
-//        {
-
-//        }
         if(row<0)
         {
             QMessageBox::about(NULL, QString::fromLocal8Bit("空选"),QString::fromLocal8Bit("请先选择列表中一项"));
@@ -216,7 +213,7 @@ void MainWindow::formatSetting()
         return ;
     }
     EncoderDialog *pe=new EncoderDialog(this,movielist.at(row));
-    int res=pe->exec();
+    pe->exec();
 }
 void MainWindow::setPath()
 {
@@ -265,11 +262,60 @@ void MainWindow::updateTransformProgressBar()
         transformtimer->stop();
         transflag=false;
         startTransform();
-
+        QIcon restart(":/icon/start");
+        ui->stratTransformButton->setIcon(restart);
+        ui->stratTransformButton->setText(QString::fromLocal8Bit("开始转换"));
+    }
+}
+void MainWindow::startMission()
+{
+    if(pControl==NULL)
+    {
+        startTransform();
+        QIcon pause(":/icon/pause");
+        ui->stratTransformButton->setIcon(pause);
+        ui->stratTransformButton->setText(QString::fromLocal8Bit("暂停任务"));
+    }
+    else
+    {
+        OAFilterState state;
+        pControl->GetState(30,&state);
+        if(state==State_Running)
+        {
+            QMessageBox message(QMessageBox::NoIcon, QString::fromLocal8Bit("任务暂停"),
+                                QString::fromLocal8Bit("这将暂停当前任务转换，“暂停”后可继续转换，“停止”将终止当前任务"),QMessageBox::Ok|QMessageBox::Cancel,NULL);
+            message.setButtonText(QMessageBox::Ok,QString::fromLocal8Bit("暂 停"));
+            message.setButtonText(QMessageBox::Cancel,QString::fromLocal8Bit("停 止"));
+            if(message.exec()==QMessageBox::Ok)
+            {
+                pControl->Pause();
+                QIcon play(":/icon/play");
+                ui->stratTransformButton->setIcon(play);
+                ui->stratTransformButton->setText(QString::fromLocal8Bit("重新开始"));
+            }
+            else
+            {
+                transformtimer->stop();
+                pControl->Stop();
+                destroyDShow();
+                destroyTransformFilter();
+                transflag=false;
+                QIcon restart(":/icon/start");
+                ui->stratTransformButton->setIcon(restart);
+                ui->stratTransformButton->setText(QString::fromLocal8Bit("开始转换"));
+            }
+        }
+        else if(state==State_Paused)
+        {
+            pControl->Run();
+            QIcon pause(":/icon/pause");
+            ui->stratTransformButton->setIcon(pause);
+            ui->stratTransformButton->setText(QString::fromLocal8Bit("暂停任务"));
+        }
     }
 }
 void MainWindow::startTransform()
-{
+{ 
     int i=0;
     while(i<movielist.size() && movielist.at(i)->finishflag)
     {
@@ -286,51 +332,6 @@ void MainWindow::startTransform()
 }
 void MainWindow::playMovie(int row)
 {
-//    if(item->column()!=1)
-//    {
-//        return ;
-//    }
-//    if(!dshowflag)
-//    {
-//        initDirectShow();
-//        initPlayerFilter();
-//    }
-//    else
-//    {
-//        destroyDShow();
-//        destroyPlayerFilter();
-//        initDirectShow();
-//        initPlayerFilter();
-//    }
-//    dshowflag=true;
-//    int row=item->row();
-//    MovieInfo *p=movielist.at(row);
-//    LPCOLESTR str=reinterpret_cast<const wchar_t *>(p->path.utf16());
-//    hr=pSource->QueryInterface(IID_IFileSourceFilter,(void **)&pFileSource);
-//    pFileSource->Load(str,NULL);
-//        TransformFilterInterface *pTransformInterface;
-//        hr=pTransform->QueryInterface(IID_TransformFilterInterface,(void **)&pTransformInterface);
-//        if(p->projectflag)
-//        {
-//            pTransformInterface->DoSetting(p->setting.w,p->setting.h,(int)p->setting.input_layout,(int)p->setting.output_layout,
-//                                           0,p->setting.cube_edge_length,p->setting.max_cube_edge_length,p->setting.interpolation_alg,
-//                                           p->setting.enable_low_pass_filter,p->setting.enable_multi_threading,p->setting.num_vertical_segments,
-//                                           p->setting.num_horizontal_segments);
-//        }
-//        pTransformInterface->Release();
-//    if(FAILED(hr))
-//    {
-//        return ;
-//    }
-//    addPlayerFilter();
-//    //getPages(pTransform,pProp);
-//    connectPlayerFilter();
-//    bindwindows();
-//    hr = pControl->Run();
-//    if(FAILED(hr))
-//    {
-//        return ;
-//    }
     MovieInfo *p=movielist.at(row);
     if(player!=NULL)
     {
@@ -422,13 +423,12 @@ HRESULT MainWindow::getCLSID()
 {
     hr = CLSIDFromString(OLESTR("{8F43B7D9-9D6B-4F48-BE18-4D787C795EEA}"), &source);
     hr = CLSIDFromString(OLESTR("{04FE9017-F873-410E-871E-AB91661A4EF7}"), &vdec);
-    hr = CLSIDFromString(OLESTR("{0F40E1E5-4F79-4988-B1A9-CC98794E6B55}"), &adec);
+    hr = CLSIDFromString(OLESTR("{E1F1A0B8-BEEE-490D-BA7C-066C40B5E2B9}"), &adec);
     hr = CLSIDFromString(OLESTR("{9E5A9E31-1C34-4873-863D-D5441C645398}"), &transform);
-    hr = CLSIDFromString(OLESTR("{152F4328-67D0-4B28-A98B-DEEE7D27B63E}"), &vrenderer);
-    hr = CLSIDFromString(OLESTR("{79376820-07D0-11CF-A24D-0020AFD79767}"), &arenderer);
     hr = CLSIDFromString(OLESTR("{E2510970-F137-11CE-8B67-00AA00A3F1A6}"), &avimuxer);
     hr = CLSIDFromString(OLESTR("{5FD85181-E542-4E52-8D9D-5D613C30131B}"), &mp4muxer);
     hr = CLSIDFromString(OLESTR("{8596E5F0-0DA5-11D0-BD21-00A0C911CE86}"), &writer);
+    hr = CLSIDFromString(OLESTR("{94297043-BD82-4DFD-B0DE-8177739C6D20}"), &acod);
     return hr;
 }
 void MainWindow::destroyDShow()
@@ -436,6 +436,7 @@ void MainWindow::destroyDShow()
     pGraph->Release();
     pControl->Release();
     pEvent->Release();
+    pControl=NULL;
 }
 void MainWindow::destroyTransformFilter()
 {
@@ -449,15 +450,17 @@ void MainWindow::destroyTransformFilter()
 void MainWindow::addTransformFilter()
 {
     pGraph->AddFilter(pSource,L"Source");
-    pGraph->AddFilter(pVDec,L"Video Decodec");
-    pGraph->AddFilter(pADec,L"Audio Decodec");
+    pGraph->AddFilter(pVDec,L"Video Decodec");    
     pGraph->AddFilter(pTransform,L"Transform");
     pGraph->AddFilter(pMuxer,L"AVI Muxer");
-    CreateCompressorFilter(&pVCod);
-    pGraph->AddFilter(pVCod,L"x264 encoder");
+    CreateVideoCompressorFilter(&pVCod);
+    pGraph->AddFilter(pADec,L"Audio Decodec");
+    CreateAudioCompressorFilter(&pACod);
+    pGraph->AddFilter(pACod,L"Audio Encoder");
+    pGraph->AddFilter(pVCod,L"Video Encoder");
     pGraph->AddFilter(pWriter,L"File Writer");
 }
-void MainWindow::CreateCompressorFilter(IBaseFilter **pBaseFilter)
+void MainWindow::CreateVideoCompressorFilter(IBaseFilter **pBaseFilter)
 {
     ICreateDevEnum *pCreateDevEnum = NULL;
     HRESULT hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
@@ -520,12 +523,55 @@ void MainWindow::CreateCompressorFilter(IBaseFilter **pBaseFilter)
     pEm->Release();
     pCreateDevEnum->Release();
 }
+void MainWindow::CreateAudioCompressorFilter(IBaseFilter **pBaseFilter)
+{
+    ICreateDevEnum *pCreateDevEnum = NULL;
+    HRESULT hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
+        IID_ICreateDevEnum, (void**)&pCreateDevEnum);
+
+    IEnumMoniker *pEm = NULL;
+    hr = pCreateDevEnum->CreateClassEnumerator(CLSID_AudioCompressorCategory, &pEm, 0);
+    if (hr != NOERROR)
+        return;
+    pEm->Reset();
+    ULONG cFetched;
+    IMoniker *pM = NULL;
+    while (hr = pEm->Next(1, &pM, &cFetched), hr == S_OK)
+    {
+        IPropertyBag *pBag = 0;
+        hr = pM->BindToStorage(0, 0, IID_IPropertyBag, (void **)&pBag);
+        if (SUCCEEDED(hr))
+        {
+            VARIANT var;
+            var.vt = VT_BSTR;
+            hr = pBag->Read(L"FriendlyName", &var, NULL); //还有其他属性,像描述信息等等...
+            CString setstr=currentmission->audioencoder.toStdString().c_str();
+            CString str = var.bstrVal;
+            if (str.Compare(setstr)==0)//"Microsoft ADPCM
+            {
+                //获取设备名称
+                char audio_name[1024];
+                WideCharToMultiByte(CP_ACP, 0, var.bstrVal, -1, audio_name, sizeof(audio_name), "", NULL);
+                SysFreeString(var.bstrVal);
+                hr = pM->BindToObject(0, 0, IID_IBaseFilter, (void**)pBaseFilter);//就是这句获得Filter
+                if (FAILED(hr))
+                {
+                    printf("error");
+                }
+            }
+            pBag->Release();
+        }
+        pM->Release();
+    }
+    pEm->Release();
+    pCreateDevEnum->Release();
+}
 void MainWindow::initTransformFilter()
 {
     hr=CoCreateInstance(source, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pSource);
     hr=CoCreateInstance(vdec, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pVDec);
-    hr=CoCreateInstance(adec, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pADec);
     hr=CoCreateInstance(transform, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pTransform);
+    hr=CoCreateInstance(adec, NULL, CLSCTX_ALL, IID_IBaseFilter, (void**)&pADec);
     switch (currentmission->muxer)
     {
     case avi:
@@ -550,9 +596,6 @@ void MainWindow::connectTransformFilter()
     getUnconnectedPin(pSource,PINDIR_OUTPUT,&pOut);
     getUnconnectedPin(pVDec,PINDIR_INPUT,&pIn);
     hr=pGraph->Connect(pOut,pIn);
-    getUnconnectedPin(pSource,PINDIR_OUTPUT,&pOut);
-    getUnconnectedPin(pADec,PINDIR_INPUT,&pIn);
-    hr=pGraph->Connect(pOut,pIn);
     getUnconnectedPin(pVDec,PINDIR_OUTPUT,&pOut);
     getUnconnectedPin(pTransform,PINDIR_INPUT,&pIn);
     hr=pGraph->Connect(pOut,pIn);
@@ -562,11 +605,41 @@ void MainWindow::connectTransformFilter()
     getUnconnectedPin(pVCod,PINDIR_OUTPUT,&pOut);
     getUnconnectedPin(pMuxer,PINDIR_INPUT,&pIn);
     hr=pGraph->Connect(pOut,pIn);
-    //hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pVDec,pTransform,pMuxer);
-//    getUnconnectedPin(pADec,PINDIR_OUTPUT,&pOut);
-//    getUnconnectedPin(pMuxer,PINDIR_INPUT,&pIn);
-//    hr=pGraph->Connect(pOut,pIn);
-    hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pADec,NULL,pMuxer);
+    if(!currentmission->disableaudio)
+    {
+        getUnconnectedPin(pSource,PINDIR_OUTPUT,&pOut);
+        getUnconnectedPin(pADec,PINDIR_INPUT,&pIn);
+        hr=pGraph->Connect(pOut,pIn);
+        if(hr!=S_OK||hr!=0)
+        {
+            QMessageBox message(QMessageBox::NoIcon, QString::fromLocal8Bit("警告"), QString::fromLocal8Bit("无法识别输入音频轨道，音频轨道数据将会丢失！"), QMessageBox::Yes | QMessageBox::No, NULL);
+            message.exec();
+        }
+        else
+        {
+            //hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pADec,NULL,pMuxer);
+            getUnconnectedPin(pADec,PINDIR_OUTPUT,&pOut);
+            getUnconnectedPin(pACod,PINDIR_INPUT,&pIn);
+            hr=pGraph->Connect(pOut,pIn);
+            getUnconnectedPin(pACod,PINDIR_OUTPUT,&pOut);
+            getUnconnectedPin(pMuxer,PINDIR_INPUT,&pIn);
+            hr=pGraph->Connect(pOut,pIn);
+            if(hr!=S_OK||hr!=0)
+            {
+                QMessageBox message(QMessageBox::NoIcon, QString::fromLocal8Bit("警告"), QString::fromLocal8Bit("无法正确连接音频轨道，将尝试直接连接原始音频数据输出！"), QMessageBox::Yes | QMessageBox::No, NULL);
+                message.exec();
+                //hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pADec,NULL,pMuxer);
+                getUnconnectedPin(pADec,PINDIR_OUTPUT,&pOut);
+                getUnconnectedPin(pMuxer,PINDIR_INPUT,&pIn);
+                hr=pGraph->Connect(pOut,pIn);
+                if(hr!=S_OK||hr!=0)
+                {
+                    QMessageBox message(QMessageBox::NoIcon, QString::fromLocal8Bit("警告"), QString::fromLocal8Bit("无法正确连接音频轨道，音频轨道数据将会丢失！"), QMessageBox::Yes | QMessageBox::No, NULL);
+                    message.exec();
+                }
+            }
+        }
+    }
     getUnconnectedPin(pMuxer,PINDIR_OUTPUT,&pOut);
     getUnconnectedPin(pWriter,PINDIR_INPUT,&pIn);
     hr=pGraph->Connect(pOut,pIn);
@@ -617,6 +690,16 @@ void MainWindow::removeMovieVector()
     }
 
 }
+void MainWindow::deleteAllMovieVector()
+{
+    MovieInfo *p;
+    for(std::vector<MovieInfo*>::iterator iter=movielist.begin();iter!=movielist.end();iter++)
+    {
+        p=*iter;
+        delete(p);
+    }
+    movielist.clear();
+}
 void MainWindow::doTransformMission(MovieInfo *p)
 {
     if(p->finishflag)
@@ -662,7 +745,6 @@ void MainWindow::doTransformMission(MovieInfo *p)
     default:
         break;
     }
-
     LPCOLESTR output=reinterpret_cast<const wchar_t *>(p->outputfile.utf16());
     pFileWriter->SetFileName(output,NULL);
     if(FAILED(hr))
@@ -673,12 +755,17 @@ void MainWindow::doTransformMission(MovieInfo *p)
     connectTransformFilter();
     initTransformProgressBar();
     hr = pControl->Run();
-    transformtimer->start(300);
+    transformtimer->start(100);
     if(FAILED(hr))
     {
+        for(int i=0;i<5;i++)
+        {
+            hr = pControl->Run();
+        }
         transformtimer->stop();
         return ;
     }
+
 }
 void MainWindow::getCurrentItemSet(const QModelIndex & index)
 {

@@ -6,6 +6,7 @@ ProjectionDialog::ProjectionDialog(QWidget *parent,MovieInfo *p) :
     ui(new Ui::ProjectionDialog)
 {
     ui->setupUi(this);
+    this->setWindowTitle(QString::fromLocal8Bit("全景投影转换参数设置"));
     movieinfo=p;
     initUI();
     initComboBox();

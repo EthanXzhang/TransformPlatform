@@ -41,7 +41,8 @@ private:
     HRESULT getUnconnectedPin(IBaseFilter *pFilter,PIN_DIRECTION PinDir,IPin **ppPin);
     HRESULT getCLSID();
     HRESULT bindwindows();
-    void CreateCompressorFilter(IBaseFilter **pBaseFilter);
+    void CreateVideoCompressorFilter(IBaseFilter **pBaseFilter);
+    void CreateAudioCompressorFilter(IBaseFilter **pBaseFilter);
 
     HRESULT initTransformFilter();
     HRESULT connectTransformFilter();

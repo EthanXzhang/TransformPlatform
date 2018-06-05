@@ -162,7 +162,7 @@ HRESULT TransformMission::getCLSID()
     hr = CLSIDFromString(OLESTR("{8596E5F0-0DA5-11D0-BD21-00A0C911CE86}"), &writer);
     return hr;
 }
-void TransformMission::CreateCompressorFilter(IBaseFilter **pBaseFilter)
+void TransformMission::CreateVideoCompressorFilter(IBaseFilter **pBaseFilter)
 {
     ICreateDevEnum *pCreateDevEnum = NULL;
     HRESULT hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
@@ -225,6 +225,36 @@ void TransformMission::CreateCompressorFilter(IBaseFilter **pBaseFilter)
     pEm->Release();
     pCreateDevEnum->Release();
 }
+void TransformMission::CreateAudioCompressorFilter(IBaseFilter **pBaseFilter)
+{
+    ICreateDevEnum *pCreateDevEnum = NULL;
+    HRESULT hr = CoCreateInstance(CLSID_SystemDeviceEnum, NULL, CLSCTX_INPROC_SERVER,
+        IID_ICreateDevEnum, (void**)&pCreateDevEnum);
+
+    IEnumMoniker *pEm = NULL;
+    hr = pCreateDevEnum->CreateClassEnumerator(CLSID_AudioCompressorCategory, &pEm, 0);
+    if (hr != NOERROR)
+        return;
+    pEm->Reset();
+    ULONG cFetched;
+    IMoniker *pM = NULL;
+    while (hr = pEm->Next(1, &pM, &cFetched), hr == S_OK)
+    {
+        IPropertyBag *pBag = 0;
+        hr = pM->BindToStorage(0, 0, IID_IPropertyBag, (void **)&pBag);
+        if (SUCCEEDED(hr))
+        {
+            VARIANT var;
+            var.vt = VT_BSTR;
+            hr = pBag->Read(L"FriendlyName", &var, NULL); //还有其他属性,像描述信息等等...
+            CString str = var.bstrVal;
+            pBag->Release();
+        }
+        pM->Release();
+    }
+    pEm->Release();
+    pCreateDevEnum->Release();
+}
 HRESULT TransformMission::connectTransformFilter()
 {
     IPin *pOut,*pIn;
@@ -259,7 +289,8 @@ void TransformMission::addTransformFilter()
     pGraph->AddFilter(pADec,L"Audio Decodec");
     pGraph->AddFilter(pTransform,L"Transform");
     pGraph->AddFilter(pMuxer,L"AVI Muxer");
-    CreateCompressorFilter(&pVCod);
+    CreateVideoCompressorFilter(&pVCod);
+    CreateAudioCompressorFilter(&pVCod);
     pGraph->AddFilter(pVCod,L"x264 encoder");
     pGraph->AddFilter(pWriter,L"File Writer");
 }

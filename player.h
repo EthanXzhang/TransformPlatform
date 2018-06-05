@@ -27,6 +27,7 @@ private:
     IGraphBuilder *pGraph=NULL;
     IMediaControl *pControl=NULL;
     ICaptureGraphBuilder2* pGraph2=NULL;
+    DWORD   m_dwGraphRegister;
 
     IFileSourceFilter *pFileSource;
     IFileSinkFilter *pFileWriter;
@@ -42,7 +43,11 @@ private:
     HRESULT initCaptureGraphBuilder(IGraphBuilder **ppGraph, ICaptureGraphBuilder2 **ppBuild);
     HRESULT getUnconnectedPin(IBaseFilter *pFilter,PIN_DIRECTION PinDir,IPin **ppPin);
     HRESULT getCLSID();
+    HRESULT GetAVDevices(IBaseFilter **pBaseFilter);
     HRESULT bindwindows();
+
+    HRESULT AddToRot(IUnknown *pUnkGraph, DWORD *pdwRegister);
+    void RemoveFromRot(DWORD pdwRegister);
 
     HRESULT initProjectionPlayerFilter();
     HRESULT initNormalPlayerFilter();

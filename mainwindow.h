@@ -24,6 +24,7 @@
 #include <vector>
 #include <atlstr.h>
 #include <QProcess>
+#include <exception>
 
 #include "movieinfo.h"
 #include "projectiondialog.h"
@@ -57,7 +58,7 @@ private:
 
     HWND g_hWnd;
     IVideoWindow *m_pVW;
-    CLSID source,transform,vdec,adec,vrenderer,arenderer,vcodec,avimuxer,mp4muxer,writer;
+    CLSID source,transform,vdec,adec,vrenderer,arenderer,vcodec,avimuxer,mp4muxer,writer,acod;
     IGraphBuilder *pGraph=NULL;
     IMediaControl *pControl=NULL;
     IMediaEvent   *pEvent = NULL;
@@ -65,7 +66,7 @@ private:
     ICaptureGraphBuilder2* pGraph2=NULL;
     IFileSourceFilter *pFileSource;
     IFileSinkFilter *pFileWriter;
-    IBaseFilter *pSource,*pTransform,*pVDec,*pADec,*pVRenderer,*pARenderer,*pVCod,*pMuxer,*pWriter;
+    IBaseFilter *pSource,*pTransform,*pVDec,*pADec,*pVRenderer,*pARenderer,*pVCod,*pACod,*pMuxer,*pWriter;
     ISpecifyPropertyPages *pProp;
     LONGLONG duration=NULL;
     bool dshowflag=false,transflag=false;
@@ -73,6 +74,8 @@ private:
 
     Player *player=NULL;
     PlayerWindow *playerwindow=NULL;
+
+    bool transfromflag=false;
 private:
     void initUI();
     void initTable();
@@ -89,12 +92,14 @@ private:
     void connectPlayerFilter();
     void connectTransformFilter();
     void addTransformFilter();
-    void CreateCompressorFilter(IBaseFilter **pBaseFilter);
+    void CreateVideoCompressorFilter(IBaseFilter **pBaseFilter);
+    void CreateAudioCompressorFilter(IBaseFilter **pBaseFilter);
     void initTransformFilter();
     void initTransformProgressBar();
     void destoryTransformProgressBar();
     void addMovieVector(QFileInfo fileinfo,int row);
     void removeMovieVector();
+    void deleteAllMovieVector();
     void doTransformMission(MovieInfo *p);
 
 private slots:
@@ -113,6 +118,7 @@ private slots:
     void updateTransformProgressBar();
     void setMoviePath(int index);
     void settingTableChanged(int row, int col);
+    void startMission();
 public slots:
     void sendoutPlayerWindow();
 };
