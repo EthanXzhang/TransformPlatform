@@ -269,6 +269,15 @@ void MainWindow::updateTransformProgressBar()
 }
 void MainWindow::startMission()
 {
+    int i=0;
+    while(i<movielist.size() && movielist.at(i)->finishflag)
+    {
+        i++;
+    }
+    if(i>=movielist.size())
+    {
+        return ;
+    }
     if(pControl==NULL)
     {
         startTransform();
@@ -421,14 +430,13 @@ HRESULT MainWindow::getUnconnectedPin(IBaseFilter *pFilter,PIN_DIRECTION PinDir,
 }
 HRESULT MainWindow::getCLSID()
 {
-    hr = CLSIDFromString(OLESTR("{8F43B7D9-9D6B-4F48-BE18-4D787C795EEA}"), &source);
-    hr = CLSIDFromString(OLESTR("{04FE9017-F873-410E-871E-AB91661A4EF7}"), &vdec);
-    hr = CLSIDFromString(OLESTR("{E1F1A0B8-BEEE-490D-BA7C-066C40B5E2B9}"), &adec);
+    hr = CLSIDFromString(OLESTR("{8F43B7D9-9D6B-4F48-BE18-4D787C795EEA}"), &source);//Haali Simple Media Splitter
+    hr = CLSIDFromString(OLESTR("{04FE9017-F873-410E-871E-AB91661A4EF7}"), &vdec);//ffdshow Video Decoder
+    hr = CLSIDFromString(OLESTR("{E1F1A0B8-BEEE-490D-BA7C-066C40B5E2B9}"), &adec);//Microsoft DTV-DVD Audio Decoder
     hr = CLSIDFromString(OLESTR("{9E5A9E31-1C34-4873-863D-D5441C645398}"), &transform);
-    hr = CLSIDFromString(OLESTR("{E2510970-F137-11CE-8B67-00AA00A3F1A6}"), &avimuxer);
-    hr = CLSIDFromString(OLESTR("{5FD85181-E542-4E52-8D9D-5D613C30131B}"), &mp4muxer);
-    hr = CLSIDFromString(OLESTR("{8596E5F0-0DA5-11D0-BD21-00A0C911CE86}"), &writer);
-    hr = CLSIDFromString(OLESTR("{94297043-BD82-4DFD-B0DE-8177739C6D20}"), &acod);
+    hr = CLSIDFromString(OLESTR("{E2510970-F137-11CE-8B67-00AA00A3F1A6}"), &avimuxer);//AVI mux
+    hr = CLSIDFromString(OLESTR("{5FD85181-E542-4E52-8D9D-5D613C30131B}"), &mp4muxer);//GDCL Mpeg-4 Multiplexor
+    hr = CLSIDFromString(OLESTR("{8596E5F0-0DA5-11D0-BD21-00A0C911CE86}"), &writer);//File Writer
     return hr;
 }
 void MainWindow::destroyDShow()
@@ -617,7 +625,6 @@ void MainWindow::connectTransformFilter()
         }
         else
         {
-            //hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pADec,NULL,pMuxer);
             getUnconnectedPin(pADec,PINDIR_OUTPUT,&pOut);
             getUnconnectedPin(pACod,PINDIR_INPUT,&pIn);
             hr=pGraph->Connect(pOut,pIn);
@@ -628,7 +635,6 @@ void MainWindow::connectTransformFilter()
             {
                 QMessageBox message(QMessageBox::NoIcon, QString::fromLocal8Bit("警告"), QString::fromLocal8Bit("无法正确连接音频轨道，将尝试直接连接原始音频数据输出！"), QMessageBox::Yes | QMessageBox::No, NULL);
                 message.exec();
-                //hr=pGraph2->RenderStream(NULL,&MEDIATYPE_Video,pADec,NULL,pMuxer);
                 getUnconnectedPin(pADec,PINDIR_OUTPUT,&pOut);
                 getUnconnectedPin(pMuxer,PINDIR_INPUT,&pIn);
                 hr=pGraph->Connect(pOut,pIn);
